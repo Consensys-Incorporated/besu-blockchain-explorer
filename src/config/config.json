@@ -1,0 +1,13 @@
+{
+  "algorithm": "qbft",
+  "nodes": [
+    { "name": "rpcnode", "rpcUrl": "http://127.0.0.1:8545" },
+    { "name": "validator1", "rpcUrl": "http://127.0.0.1:21001" },
+    { "name": "validator2", "rpcUrl": "http://127.0.0.1:21002" },
+    { "name": "validator3", "rpcUrl": "http://127.0.0.1:21003" },
+    { "name": "validator4", "rpcUrl": "http://127.0.0.1:21004" },
+    { "name": "member1", "rpcUrl": "http://127.0.0.1:20000" },
+    { "name": "member2", "rpcUrl": "http://127.0.0.1:20002" },
+    { "name": "member3", "rpcUrl": "http://127.0.0.1:20004" }
+  ]
+}
