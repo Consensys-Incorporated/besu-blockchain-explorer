@@ -9,33 +9,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { getPageProps } from "@/lib/api.server";
 import { postApi } from "@/lib/api";
+import { clientIdentity } from "@/lib/format";
 import { usePolling } from "@/lib/hooks";
-import { useSelectedNode } from "@/lib/nodeContext";
 import type { PageProps } from "@/types/Config";
 import type { NodeDetails, Peer } from "@/types/Nodes";
 
 export default function Nodes({ config }: PageProps) {
-  const [node, selectNode] = useSelectedNode(config);
   const [details, setDetails] = useState<NodeDetails | null>(null);
   const [peers, setPeers] = useState<Peer[]>([]);
 
   usePolling(
     async (signal) => {
-      const d = await postApi<NodeDetails>("nodeGetDetails", { rpcUrl: node.rpcUrl }, signal);
+      const d = await postApi<NodeDetails>("nodeGetDetails", { rpcUrl: config.rpcUrl }, signal);
       setDetails(d);
       setPeers(
-        d.online ? await postApi<Peer[]>("nodeGetPeers", { rpcUrl: node.rpcUrl }, signal) : []
+        d.online ? await postApi<Peer[]>("nodeGetPeers", { rpcUrl: config.rpcUrl }, signal) : []
       );
     },
     5000,
-    [node.rpcUrl]
+    [config.rpcUrl]
   );
-
-  const handleSelect = (name: string) => {
-    setDetails(null);
-    setPeers([]);
-    selectNode(name);
-  };
 
   const loading = details === null;
   const online = details?.online ?? false;
@@ -46,10 +39,7 @@ export default function Nodes({ config }: PageProps) {
     <>
       <PageHeader
         title="Nodes"
-        description="Health and identity of the selected Besu node."
-        config={config}
-        node={node}
-        onSelectNode={handleSelect}
+        description="Health and identity of the Besu node."
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -90,11 +80,15 @@ export default function Nodes({ config }: PageProps) {
         <CardContent>
           <DataList
             items={[
+              {
+                label: "Name",
+                value: value(clientIdentity(details?.nodeName ?? "") ?? "Not set (--identity)"),
+              },
               { label: "Client", value: value(details?.nodeName) },
               { label: "Node ID", value: value(details?.nodeId), mono: true },
               { label: "Enode", value: value(details?.enode), mono: true },
               { label: "IP address", value: value(details?.ip), mono: true },
-              { label: "RPC URL", value: node.rpcUrl, mono: true },
+              { label: "RPC URL", value: config.rpcUrl, mono: true },
             ]}
           />
         </CardContent>

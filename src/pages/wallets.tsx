@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { getPageProps } from "@/lib/api.server";
 import { errorMessage } from "@/lib/api";
-import { useSelectedNode } from "@/lib/nodeContext";
 import { useWallet } from "@/lib/wallet";
 import type { PageProps } from "@/types/Config";
 
@@ -25,8 +24,7 @@ function parseAmount(amount: string): bigint | null {
 }
 
 export default function Wallets({ config }: PageProps) {
-  const [node, selectNode] = useSelectedNode(config);
-  const wallet = useWallet(node);
+  const wallet = useWallet(config);
   const [balance, setBalance] = useState<{ account: string; eth: string } | null>(null);
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
@@ -78,9 +76,6 @@ export default function Wallets({ config }: PageProps) {
       <PageHeader
         title="Wallets"
         description="Send ETH from your browser wallet."
-        config={config}
-        node={node}
-        onSelectNode={selectNode}
       />
       <Card>
         <CardHeader className="border-b">

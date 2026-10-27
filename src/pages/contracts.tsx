@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { getPageProps } from "@/lib/api.server";
 import { errorMessage, postApi } from "@/lib/api";
 import { contractTemplates } from "@/lib/contractTemplates";
-import { useSelectedNode } from "@/lib/nodeContext";
 import { useWallet } from "@/lib/wallet";
 import type { PageProps } from "@/types/Config";
 import {
@@ -29,8 +28,7 @@ import {
 const CUSTOM = "__custom__";
 
 export default function Contracts({ config }: PageProps) {
-  const [node, selectNode] = useSelectedNode(config);
-  const wallet = useWallet(node);
+  const wallet = useWallet(config);
 
   const [template, setTemplate] = useState(contractTemplates[0].name);
   const [code, setCode] = useState(contractTemplates[0].contract);
@@ -104,9 +102,6 @@ export default function Contracts({ config }: PageProps) {
       <PageHeader
         title="Contracts"
         description="Compile, deploy and call Solidity contracts through your browser wallet."
-        config={config}
-        node={node}
-        onSelectNode={selectNode}
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

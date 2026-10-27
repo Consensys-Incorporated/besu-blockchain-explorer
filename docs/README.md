@@ -6,7 +6,7 @@ A lightweight explorer for private [Hyperledger Besu](https://besu.hyperledger.o
 
   ![Nodes page](nodes.png)
 
-- **Validators**: view the validator set, and propose or discard votes (QBFT, IBFT 2.0 and Clique)
+- **Validators**: view the validator set with node names (QBFT, IBFT 2.0 and Clique). On demo networks, also propose or discard votes
 
   ![Validators page](validators.png)
 
@@ -35,34 +35,46 @@ Next.js 16 (Pages Router), React 19, TypeScript, Tailwind CSS v4, [shadcn/ui](ht
 - [Docker](https://www.docker.com/) (optional)
 - A Besu network, for example from the [Besu Dev Quickstart](https://www.npmjs.com/package/@consensys-software/besu-dev-quickstart)
 
-The explorer calls these JSON-RPC API groups, so enable them on each node with `--rpc-http-api`:
+The explorer reads from a single node. Enable these JSON-RPC API groups on it with `--rpc-http-api`:
 
 | API group | Used for |
 | --- | --- |
 | `ETH`, `NET` | blocks, transactions, chain ID, peer count |
-| `ADMIN` | node info and peer list |
+| `ADMIN` | node info, peer list and validator names |
 | `TXPOOL` | pending transaction count (optional) |
 | `QBFT`, `IBFT` or `CLIQUE` | the validators page (match your consensus) |
 
 ## Configuration
 
-Create a config file listing the nodes to monitor. See [`src/config/config.json`](../src/config/config.json):
+Point the explorer at a node with `QE_RPC_URL`, for example `http://rpcnode:8545`. Every page reads from this node, and it must be reachable from the explorer's server.
+
+The explorer works the rest out from the chain:
+
+- **Consensus**: detected from whichever of the `QBFT`, `IBFT` or `CLIQUE` APIs the node answers.
+- **Node names**: start each Besu node with `--identity=<name>`, for example `--identity=validator1`. The explorer shows that name for the node and its peers. Validators are matched to names by address, for the node itself and its directly connected peers.
+
+The server only proxies requests to the configured RPC URLs, and only for an allow-list of RPC methods.
+
+### Validator voting (demo networks only)
+
+> [!WARNING]
+> Only use this on demo and test networks, never in production. It needs each validator's RPC endpoint and lets anyone signed in to the explorer vote validators in or out.
+
+Proposing or discarding a validator vote has to be sent to each validator's own RPC endpoint. To enable voting, set `QE_VALIDATORS_CONFIG_PATH` to a file listing them. See [`src/config/validators.json`](../src/config/validators.json):
 
 ```json
 {
-  "algorithm": "qbft",
-  "nodes": [
-    { "name": "rpcnode", "rpcUrl": "http://127.0.0.1:8545" },
-    { "name": "validator1", "rpcUrl": "http://127.0.0.1:21001" }
+  "validators": [
+    { "name": "validator1", "rpcUrl": "http://127.0.0.1:21001" },
+    { "name": "validator2", "rpcUrl": "http://127.0.0.1:21002" }
   ]
 }
 ```
 
-- `algorithm`: `qbft`, `ibft` (IBFT 2.0) or `clique`
-- `name`: any unique label
-- `rpcUrl`: the node's HTTP JSON-RPC endpoint, reachable from the explorer's server
+- `rpcUrl`: the validator's HTTP JSON-RPC endpoint, reachable from the explorer's server. Enable the `QBFT`, `IBFT` or `CLIQUE` API on it.
+- `name` (optional): the label in the validator picker. Defaults to the URL's host.
 
-The server only proxies requests to the `rpcUrl`s in this file and only for an allow-list of RPC methods.
+Without this file, the validators page is read-only.
 
 ## Local development
 
@@ -70,7 +82,9 @@ The server only proxies requests to the `rpcUrl`s in this file and only for an a
 
    ```bash
    QE_BASEPATH="/explorer"
-   QE_CONFIG_PATH="src/config/config.json"
+   QE_RPC_URL="http://127.0.0.1:8545"
+   # Optional, demo networks only: enables validator voting
+   QE_VALIDATORS_CONFIG_PATH="src/config/validators.json"
    DISABLE_AUTH=true
    NEXTAUTH_URL=http://localhost:25000/explorer/api/auth
    ```
@@ -106,7 +120,9 @@ Enable authentication in production. Set the values in `.env.production`:
 | Variable | Description |
 | --- | --- |
 | `QE_BASEPATH` | URL base path, default `/explorer`. Baked in at build time. |
-| `QE_CONFIG_PATH` | Path to the node config file. The Docker image expects `/app/config.json`. |
+| `QE_RPC_URL` | HTTP JSON-RPC endpoint of the Besu node the explorer reads from. Required. |
+| `QE_PUBLIC_RPC_URL` | RPC URL given to the browser wallet when it adds the network. Defaults to `QE_RPC_URL`. Set it when browsers can't reach `QE_RPC_URL`, for example when that's an internal hostname. |
+| `QE_VALIDATORS_CONFIG_PATH` | Path to the validators file that enables voting. Demo networks only. See [Validator voting](#validator-voting-demo-networks-only). |
 | `DISABLE_AUTH` | `true` turns authentication off. Any other value requires sign-in. |
 | `NEXTAUTH_URL` | Public URL of the auth API, including the base path, for example `https://example.com/explorer/api/auth`. |
 | `NEXTAUTH_SECRET` | Secret used to sign sessions. |
@@ -120,14 +136,25 @@ OAuth providers are enabled when all of their variables are set: GitHub, GitLab,
 services:
   explorer:
     image: consensys/besu-explorer:latest
+    environment:
+      QE_RPC_URL: http://rpcnode:8545
     volumes:
-      - ./config.json:/app/config.json
       - ./.env.production:/app/.env.production
     ports:
       - 25000:25000/tcp
 ```
 
-Both files **must** be provided.
+`.env.production` **must** be provided. Variables set in `environment` override it.
+
+For a demo network with voting, also mount the validators file and point to it:
+
+```yaml
+    environment:
+      QE_RPC_URL: http://rpcnode:8545
+      QE_VALIDATORS_CONFIG_PATH: /app/validators.json
+    volumes:
+      - ./validators.json:/app/validators.json
+```
 
 ### Building your own image
 

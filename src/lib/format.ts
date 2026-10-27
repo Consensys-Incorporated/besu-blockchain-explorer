@@ -28,3 +28,10 @@ export function timeAgo(timestampHex: string, now = Date.now()): string {
 export function formatTimestamp(timestampHex: string): string {
   return new Date(hexToNumber(timestampHex) * 1000).toLocaleString();
 }
+
+// Besu puts --identity in its client ID: besu/<identity>/v26.1.0/linux-x86_64/openjdk-java-25.
+// Without it the ID has one part fewer.
+export function clientIdentity(clientId: string): string | undefined {
+  const parts = clientId.split("/");
+  return parts.length >= 5 ? parts[1] : undefined;
+}

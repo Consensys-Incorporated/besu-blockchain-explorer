@@ -8,13 +8,15 @@ import { ValidatorsPropose } from "@/components/Validators/ValidatorsPropose";
 import { getPageProps } from "@/lib/api.server";
 import { errorMessage, postApi } from "@/lib/api";
 import { usePolling } from "@/lib/hooks";
-import { useSelectedNode } from "@/lib/nodeContext";
+import { useSelectedValidator } from "@/lib/nodeContext";
 import type { PageProps } from "@/types/Config";
-import type { PendingVote } from "@/types/Validators";
+import type { PendingVote, Validator } from "@/types/Validators";
 
-export default function Validators({ config }: PageProps) {
-  const [node, selectNode] = useSelectedNode(config);
-  const [validators, setValidators] = useState<string[] | null>(null);
+export default function Validators({ config, algorithm }: PageProps) {
+  // Voting needs each validator's own RPC endpoint, which only the demo validators file provides.
+  const [validator, selectValidator] = useSelectedValidator(config.validators);
+  const rpcUrl = validator?.rpcUrl ?? config.rpcUrl;
+  const [validators, setValidators] = useState<Validator[] | null>(null);
   const [votes, setVotes] = useState<PendingVote[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,8 +24,10 @@ export default function Validators({ config }: PageProps) {
     async (signal) => {
       try {
         const [current, pending] = await Promise.all([
-          postApi<string[]>("validatorsGetCurrent", { rpcUrl: node.rpcUrl }, signal),
-          postApi<PendingVote[]>("validatorsGetPendingVotes", { rpcUrl: node.rpcUrl }, signal),
+          postApi<Validator[]>("validatorsGetCurrent", { rpcUrl }, signal),
+          validator
+            ? postApi<PendingVote[]>("validatorsGetPendingVotes", { rpcUrl }, signal)
+            : null,
         ]);
         setValidators(current);
         setVotes(pending);
@@ -36,45 +40,60 @@ export default function Validators({ config }: PageProps) {
       }
     },
     3000,
-    [node.rpcUrl]
+    [rpcUrl]
   );
 
   const handleSelect = (name: string) => {
     setValidators(null);
     setVotes(null);
     setError(null);
-    selectNode(name);
+    selectValidator(name);
   };
 
   return (
     <>
       <PageHeader
         title="Validators"
-        description={`Consensus: ${config.algorithm.toUpperCase()}`}
-        config={config}
-        node={node}
+        description={`Consensus: ${algorithm?.toUpperCase() ?? "unknown"}`}
+        nodes={validator ? config.validators : undefined}
+        node={validator}
         onSelectNode={handleSelect}
       />
       <Alert className="mb-6">
         <Info />
-        <AlertDescription className="space-y-2">
-          <p>
-            Votes are sent only to the node selected above. To add or remove a validator, select
-            more than half of the current validators one at a time and vote from each. Votes from
-            non-validator nodes have no effect on consensus.
-          </p>
-          <p>
-            Pending votes aren&apos;t cleared automatically once a change takes effect. Discard them
-            from each node that voted.
-          </p>
-        </AlertDescription>
+        {validator ? (
+          <AlertDescription className="space-y-2">
+            <p>
+              Votes are sent only to the validator selected above. To add or remove a validator,
+              select more than half of the current validators one at a time and vote from each.
+            </p>
+            <p>
+              Pending votes aren&apos;t cleared automatically once a change takes effect. Discard
+              them from each validator that voted.
+            </p>
+          </AlertDescription>
+        ) : (
+          <AlertDescription>
+            <p>
+              Names come from each node&apos;s <code>--identity</code> and are shown for the node
+              and its direct peers. Voting is available on demo networks that set{" "}
+              <code>QE_VALIDATORS_CONFIG_PATH</code>.
+            </p>
+          </AlertDescription>
+        )}
       </Alert>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ValidatorsActive rpcUrl={node.rpcUrl} validators={validators} error={error} />
-        <div className="space-y-6">
-          <ValidatorsPropose rpcUrl={node.rpcUrl} />
-          <ValidatorsPending rpcUrl={node.rpcUrl} votes={votes} />
-        </div>
+      <div className={validator ? "grid gap-6 lg:grid-cols-2" : undefined}>
+        <ValidatorsActive
+          rpcUrl={validator ? rpcUrl : null}
+          validators={validators}
+          error={error}
+        />
+        {validator && (
+          <div className="space-y-6">
+            <ValidatorsPropose rpcUrl={rpcUrl} />
+            <ValidatorsPending rpcUrl={rpcUrl} votes={votes} />
+          </div>
+        )}
       </div>
     </>
   );

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { BrowserProvider, type Eip1193Provider } from "ethers";
 import { postApi } from "@/lib/api";
-import type { BesuNode } from "@/types/Config";
+import type { ExplorerConfig } from "@/types/Config";
 
 type InjectedProvider = Eip1193Provider & {
   on(event: string, handler: (...args: never[]) => void): void;
@@ -23,10 +23,10 @@ function sameChain(a: string, b: string) {
 }
 
 // Browser wallet (MetaMask or any EIP-1193 injected provider) state, plus the
-// chain id of the selected Besu node so we can tell if they match.
+// chain id of the Besu node so we can tell if they match.
 const noopSubscribe = () => () => {};
 
-export function useWallet(node: BesuNode) {
+export function useWallet({ rpcUrl, publicRpcUrl }: ExplorerConfig) {
   // false during SSR/hydration, then whether an injected provider exists.
   const installed = useSyncExternalStore(
     noopSubscribe,
@@ -35,8 +35,7 @@ export function useWallet(node: BesuNode) {
   );
   const [account, setAccount] = useState("");
   const [walletChainId, setWalletChainId] = useState("");
-  const [nodeChain, setNodeChain] = useState({ rpcUrl: "", chainId: "" });
-  const nodeChainId = nodeChain.rpcUrl === node.rpcUrl ? nodeChain.chainId : "";
+  const [nodeChainId, setNodeChainId] = useState("");
 
   useEffect(() => {
     const eth = window.ethereum;
@@ -55,11 +54,11 @@ export function useWallet(node: BesuNode) {
 
   useEffect(() => {
     const controller = new AbortController();
-    postApi<{ chainId: string }>("getChainId", { rpcUrl: node.rpcUrl }, controller.signal)
-      .then((r) => setNodeChain({ rpcUrl: node.rpcUrl, chainId: r.chainId }))
+    postApi<{ chainId: string }>("getChainId", { rpcUrl }, controller.signal)
+      .then((r) => setNodeChainId(r.chainId))
       .catch((e) => !controller.signal.aborted && console.error(e));
     return () => controller.abort();
-  }, [node.rpcUrl]);
+  }, [rpcUrl]);
 
   const connect = useCallback(async () => {
     if (!window.ethereum) throw new Error("No browser wallet found. Install MetaMask to continue.");
@@ -89,13 +88,13 @@ export function useWallet(node: BesuNode) {
           {
             chainId,
             chainName: `Besu ${BigInt(nodeChainId).toString()}`,
-            rpcUrls: [node.rpcUrl],
+            rpcUrls: [publicRpcUrl],
             nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
           },
         ],
       });
     }
-  }, [nodeChainId, node.rpcUrl]);
+  }, [nodeChainId, publicRpcUrl]);
 
   const getSigner = useCallback(async () => {
     if (!window.ethereum) throw new Error("No browser wallet found");
