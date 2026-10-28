@@ -1,22 +1,35 @@
 import fs from "fs/promises";
 import type { ExplorerConfig, ValidatorNode } from "@/types/Config";
 
-// Server-side only. The explorer reads from a single node, QE_RPC_URL.
-// QE_VALIDATORS_CONFIG_PATH optionally lists each validator's own RPC endpoint
-// so the validators page can cast votes; it's meant for demo networks only.
+const DEFAULT_VALIDATORS_PATH = "/config/validators.json";
+
+// Server-side only. The explorer reads from a single node, BE_RPC_URL.
+// A validators file optionally lists each validator's own RPC endpoint so the
+// validators page can cast votes; it's meant for demo networks only.
 export async function loadConfig(): Promise<ExplorerConfig> {
-  const rpcUrl = process.env.QE_RPC_URL;
+  const rpcUrl = process.env.BE_RPC_URL;
   if (!rpcUrl) {
-    throw new Error("QE_RPC_URL must be set to a Besu node's HTTP JSON-RPC endpoint");
+    throw new Error("BE_RPC_URL must be set to a Besu node's HTTP JSON-RPC endpoint");
   }
-  const validatorsPath = process.env.QE_VALIDATORS_CONFIG_PATH;
   return {
     rpcUrl,
-    publicRpcUrl: process.env.QE_PUBLIC_RPC_URL || rpcUrl,
-    validators: validatorsPath
-      ? parseValidators(JSON.parse(await fs.readFile(validatorsPath, "utf8")))
-      : [],
+    publicRpcUrl: process.env.BE_PUBLIC_RPC_URL || rpcUrl,
+    validators: await loadValidators(),
   };
+}
+
+// Reads BE_VALIDATORS_CONFIG_PATH, or /config/validators.json when it's unset.
+// A missing default file just means voting is off; a missing explicit one is an error.
+async function loadValidators(): Promise<ValidatorNode[]> {
+  const explicitPath = process.env.BE_VALIDATORS_CONFIG_PATH;
+  let text: string;
+  try {
+    text = await fs.readFile(explicitPath || DEFAULT_VALIDATORS_PATH, "utf8");
+  } catch (e) {
+    if (!explicitPath && (e as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw e;
+  }
+  return parseValidators(JSON.parse(text));
 }
 
 // Returns a validated copy containing only the fields we use, so nothing

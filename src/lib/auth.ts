@@ -78,7 +78,63 @@ const providers: (Provider | false)[] = [
     }),
 ];
 
+// Comma-separated, case-insensitive.
+function envList(name: string): string[] {
+  return (env[name] ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase().replace(/^@/, ""))
+    .filter(Boolean);
+}
+
+const allowedEmails = envList("BE_ALLOWED_EMAILS");
+const allowedDomains = envList("BE_ALLOWED_DOMAINS");
+
+// An OAuth provider proves who someone is, not that they may use the explorer:
+// enabling Google would otherwise let in every Google account. So OAuth
+// sign-ins must match an allowed email or domain. Domains match exactly, so
+// example.com doesn't admit sub.example.com or evil-example.com. With neither
+// list set, nobody gets in through OAuth.
+export function isEmailAllowed(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  const at = normalized.lastIndexOf("@");
+  if (at <= 0) return false;
+  return allowedEmails.includes(normalized) || allowedDomains.includes(normalized.slice(at + 1));
+}
+
+const enabledProviders = providers.filter((p): p is Provider => !!p);
+
+if (
+  !isAuthDisabled() &&
+  allowedEmails.length === 0 &&
+  allowedDomains.length === 0 &&
+  enabledProviders.some((p) => p.type === "oauth")
+) {
+  console.warn(
+    "OAuth sign-in is configured but BE_ALLOWED_EMAILS and BE_ALLOWED_DOMAINS are empty, " +
+      "so all OAuth sign-ins will be denied"
+  );
+}
+
 export const authOptions: NextAuthOptions = {
-  providers: providers.filter((p): p is Provider => !!p),
+  providers: enabledProviders,
   theme: { colorScheme: "auto" },
+  // NextAuth's default is 30 days. Each session check renews the cookie, so this
+  // signs people out after 8 hours without using the explorer.
+  session: { strategy: "jwt", maxAge: 8 * 60 * 60 },
+  callbacks: {
+    async signIn({ account, profile, user }) {
+      // The local username/password is set by whoever deploys the explorer.
+      if (account?.provider === "credentials") return true;
+      const email = profile?.email ?? user.email ?? "";
+      // OIDC providers (Google, Auth0, Okta, Cognito) say whether they verified
+      // the address; Cognito sends it as a string.
+      const verified = (profile as { email_verified?: unknown } | undefined)?.email_verified;
+      const allowed =
+        email !== "" && verified !== false && verified !== "false" && isEmailAllowed(email);
+      if (!allowed) {
+        console.warn(`Sign-in denied for ${email || "an account with no email"} via ${account?.provider}`);
+      }
+      return allowed;
+    },
+  },
 };

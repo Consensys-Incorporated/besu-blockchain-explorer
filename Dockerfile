@@ -20,7 +20,7 @@ RUN npm ci
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# QE_BASEPATH from .env.production is baked into the build.
+# BE_BASEPATH from .env.production is baked into the build.
 RUN npm run build
 
 FROM base AS runner

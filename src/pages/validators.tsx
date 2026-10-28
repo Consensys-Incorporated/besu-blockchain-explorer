@@ -76,8 +76,8 @@ export default function Validators({ config, algorithm }: PageProps) {
           <AlertDescription>
             <p>
               Names come from each node&apos;s <code>--identity</code> and are shown for the node
-              and its direct peers. Voting is available on demo networks that set{" "}
-              <code>QE_VALIDATORS_CONFIG_PATH</code>.
+              and its direct peers. Voting is available on demo networks that provide{" "}
+              <code>/config/validators.json</code>.
             </p>
           </AlertDescription>
         )}

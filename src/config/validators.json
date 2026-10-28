@@ -1,8 +1,0 @@
-{
-  "validators": [
-    { "name": "validator1", "rpcUrl": "http://127.0.0.1:21001" },
-    { "name": "validator2", "rpcUrl": "http://127.0.0.1:21002" },
-    { "name": "validator3", "rpcUrl": "http://127.0.0.1:21003" },
-    { "name": "validator4", "rpcUrl": "http://127.0.0.1:21004" }
-  ]
-}

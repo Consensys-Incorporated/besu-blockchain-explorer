@@ -13,7 +13,7 @@ export type ExplorerConfig = {
   rpcUrl: string;
   // The RPC URL handed to the browser wallet when it adds the network.
   publicRpcUrl: string;
-  // Demo only: empty unless QE_VALIDATORS_CONFIG_PATH is set. Enables voting.
+  // Demo only: empty unless a validators file is present. Enables voting.
   validators: ValidatorNode[];
 };
 
