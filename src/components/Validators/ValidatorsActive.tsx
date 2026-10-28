@@ -7,14 +7,16 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { errorMessage, postApi } from "@/lib/api";
+import type { Validator } from "@/types/Validators";
 
 export function ValidatorsActive({
   rpcUrl,
   validators,
   error,
 }: {
-  rpcUrl: string;
-  validators: string[] | null;
+  // The validator to vote from; null hides the vote buttons.
+  rpcUrl: string | null;
+  validators: Validator[] | null;
   error: string | null;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -45,17 +47,22 @@ export function ValidatorsActive({
         ) : validators.length === 0 ? (
           <EmptyState>No validators returned by this node.</EmptyState>
         ) : (
-          validators.map((v) => (
-            <div key={v} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
-              <code className="truncate font-mono text-[13px]">{v}</code>
-              <Button
-                variant="destructive"
-                disabled={busy !== null}
-                onClick={() => proposeRemoval(v)}
-              >
-                {busy === v ? <Spinner data-icon="inline-start" /> : <UserMinus data-icon="inline-start" />}
-                Vote out
-              </Button>
+          validators.map(({ address, name }) => (
+            <div key={address} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+              <div className="min-w-0">
+                {name && <div className="text-sm font-medium">{name}</div>}
+                <code className="block truncate font-mono text-[13px]">{address}</code>
+              </div>
+              {rpcUrl && (
+                <Button
+                  variant="destructive"
+                  disabled={busy !== null}
+                  onClick={() => proposeRemoval(address)}
+                >
+                  {busy === address ? <Spinner data-icon="inline-start" /> : <UserMinus data-icon="inline-start" />}
+                  Vote out
+                </Button>
+              )}
             </div>
           ))
         )}

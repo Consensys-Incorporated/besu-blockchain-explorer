@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const basePath = process.env.QE_BASEPATH || "";
+const basePath = process.env.BE_BASEPATH || "";
 
 module.exports = {
   basePath,
@@ -7,7 +7,7 @@ module.exports = {
   // Self-contained server bundle for a slim Docker image.
   output: "standalone",
   // Exposed to the browser so client-side fetches can prefix API routes.
-  env: { NEXT_PUBLIC_QE_BASEPATH: basePath },
+  env: { NEXT_PUBLIC_BE_BASEPATH: basePath },
   async redirects() {
     if (basePath === "") {
       return [{ source: "/", destination: "/nodes", permanent: false }];

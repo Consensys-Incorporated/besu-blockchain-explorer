@@ -10,7 +10,7 @@ import { NavBar } from "@/components/Layout/NavBar";
 import { NodeProvider } from "@/lib/nodeContext";
 import "@/styles/globals.css";
 
-const basePath = process.env.NEXT_PUBLIC_QE_BASEPATH ?? "";
+const basePath = process.env.NEXT_PUBLIC_BE_BASEPATH ?? "";
 
 type Props = AppProps<{ session?: Session | null; disableAuth?: boolean }>;
 

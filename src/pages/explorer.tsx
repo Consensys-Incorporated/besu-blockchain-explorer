@@ -14,7 +14,6 @@ import { getPageProps } from "@/lib/api.server";
 import { errorMessage, postApi } from "@/lib/api";
 import { hexToEther, hexToNumber, shortenHex, timeAgo } from "@/lib/format";
 import { usePolling } from "@/lib/hooks";
-import { useSelectedNode } from "@/lib/nodeContext";
 import type { PageProps } from "@/types/Config";
 import type { Block, Txn } from "@/types/Explorer";
 
@@ -22,7 +21,6 @@ const LOOKBACK_OPTIONS = [10, 20, 30, 50];
 const BLOCK_CARDS = 8;
 
 export default function Explorer({ config }: PageProps) {
-  const [node, selectNode] = useSelectedNode(config);
   const [blocks, setBlocks] = useState<Block[] | null>(null);
   const [lookback, setLookback] = useState(10);
   const [now, setNow] = useState(() => Date.now());
@@ -33,14 +31,14 @@ export default function Explorer({ config }: PageProps) {
     async (signal) => {
       const recent = await postApi<Block[]>(
         "blocksGetRecent",
-        { rpcUrl: node.rpcUrl, count: lookback },
+        { rpcUrl: config.rpcUrl, count: lookback },
         signal
       );
       setBlocks(recent);
       setNow(Date.now());
     },
     5000,
-    [node.rpcUrl, lookback]
+    [config.rpcUrl, lookback]
   );
 
   const txns = useMemo(() => (blocks ?? []).flatMap((b) => b.transactions), [blocks]);
@@ -53,7 +51,7 @@ export default function Explorer({ config }: PageProps) {
     }
     try {
       const block = await postApi<Block | null>("blockGetByNumber", {
-        rpcUrl: node.rpcUrl,
+        rpcUrl: config.rpcUrl,
         blockNumber: "0x" + n.toString(16),
       });
       if (block) setOpenBlock(block);
@@ -65,7 +63,7 @@ export default function Explorer({ config }: PageProps) {
 
   const searchTxn = async (hash: string) => {
     try {
-      const txn = await postApi<Txn | null>("txnGetByHash", { rpcUrl: node.rpcUrl, hash });
+      const txn = await postApi<Txn | null>("txnGetByHash", { rpcUrl: config.rpcUrl, hash });
       if (txn) setOpenTxn(txn);
       else toast.error("Transaction not found");
     } catch (e) {
@@ -77,13 +75,7 @@ export default function Explorer({ config }: PageProps) {
     <>
       <PageHeader
         title="Explorer"
-        description="Latest blocks and transactions seen by the selected node."
-        config={config}
-        node={node}
-        onSelectNode={(name) => {
-          setBlocks(null);
-          selectNode(name);
-        }}
+        description="Latest blocks and transactions seen by the node."
       />
 
       <Card>

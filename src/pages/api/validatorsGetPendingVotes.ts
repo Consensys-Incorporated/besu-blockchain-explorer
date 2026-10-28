@@ -1,11 +1,10 @@
 import { apiRoute } from "@/lib/api.server";
-import { loadConfig } from "@/lib/config";
-import { consensusMethods, ethApiCall } from "@/lib/rpc";
+import { consensusMethods, ethApiCall, requireConsensus } from "@/lib/rpc";
 import { requireString } from "@/lib/validate";
 import type { PendingVote } from "@/types/Validators";
 
 export default apiRoute<PendingVote[]>(async (body) => {
-  const { algorithm } = await loadConfig();
+  const algorithm = await requireConsensus();
   // All three algorithms return a map of { address: voteToAdd }.
   const votes = await ethApiCall<Record<string, boolean>>(
     requireString(body, "rpcUrl"),

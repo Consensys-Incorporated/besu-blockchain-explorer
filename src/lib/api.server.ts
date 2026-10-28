@@ -2,7 +2,7 @@ import type { GetServerSidePropsContext, NextApiHandler } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions, isAuthDisabled } from "@/lib/auth";
 import { loadConfig } from "@/lib/config";
-import { RpcError } from "@/lib/rpc";
+import { getConsensus, RpcError } from "@/lib/rpc";
 
 // Wraps a POST API route with the auth check and consistent JSON error handling.
 // The handler receives the parsed request body and returns the response payload.
@@ -27,9 +27,9 @@ export function apiRoute<T>(
   };
 }
 
-// Shared getServerSideProps for every page: node config plus auth state.
+// Shared getServerSideProps for every page: node config, consensus and auth state.
 export async function getPageProps(ctx: GetServerSidePropsContext) {
-  const config = await loadConfig();
+  const [config, algorithm] = await Promise.all([loadConfig(), getConsensus()]);
   const disableAuth = isAuthDisabled();
   const session = disableAuth
     ? null
@@ -37,6 +37,7 @@ export async function getPageProps(ctx: GetServerSidePropsContext) {
   return {
     props: {
       config,
+      algorithm,
       disableAuth,
       // Round-trip to drop `undefined` fields, which Next can't serialize.
       session: session ? JSON.parse(JSON.stringify(session)) : null,

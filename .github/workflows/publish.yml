@@ -94,21 +94,31 @@ jobs:
       contents: read
       security-events: write
     steps:
-      # setting up trivy security scanner
-      - name: Run Trivy vulnerability scanner
+      # Two scans: with SARIF output trivy-action ignores `severity`, so exit-code
+      # would fail on any finding. The full report goes to the Security tab and
+      # the job only fails on CRITICAL.
+      - name: Trivy report (all severities)
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           image-ref: 'consensys/besu-blockchain-explorer@${{ needs.publishDocker.outputs.image_digest }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
-          severity: 'CRITICAL'
-          exit-code: '1'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+          exit-code: '0'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
+
+      - name: Fail on critical vulnerabilities
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          image-ref: 'consensys/besu-blockchain-explorer@${{ needs.publishDocker.outputs.image_digest }}'
+          format: 'table'
+          output: ''
+          severity: 'CRITICAL'
+          exit-code: '1'
 
   signAndAttest:
     runs-on: ubuntu-24.04

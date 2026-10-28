@@ -1,3 +1,6 @@
+// name is the node's --identity, when it could be matched to the address.
+export type Validator = { address: string; name?: string };
+
 // [address, true = vote to add | false = vote to remove]
 export type PendingVote = [string, boolean];
 

@@ -1,4 +1,4 @@
-const basePath = process.env.NEXT_PUBLIC_QE_BASEPATH ?? "";
+const basePath = process.env.NEXT_PUBLIC_BE_BASEPATH ?? "";
 
 // POSTs JSON to one of our API routes and throws with the server's message on failure.
 export async function postApi<T>(route: string, body: object, signal?: AbortSignal): Promise<T> {

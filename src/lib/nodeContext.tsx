@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import type { BesuNode, ExplorerConfig } from "@/types/Config";
+import type { ValidatorNode } from "@/types/Config";
 
 const NodeContext = createContext<{
   selected: string;
   setSelected: (name: string) => void;
 } | null>(null);
 
-// Keeps the selected node across page navigations.
+// Keeps the selected validator across page navigations.
 export function NodeProvider({ children }: { children: ReactNode }) {
   const [selected, setSelected] = useState("");
   return (
@@ -14,9 +14,12 @@ export function NodeProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useSelectedNode(config: ExplorerConfig): [BesuNode, (name: string) => void] {
+// Undefined when no validators are configured (voting is off).
+export function useSelectedValidator(
+  validators: ValidatorNode[]
+): [ValidatorNode | undefined, (name: string) => void] {
   const ctx = useContext(NodeContext);
-  if (!ctx) throw new Error("useSelectedNode must be used inside NodeProvider");
-  const node = config.nodes.find((n) => n.name === ctx.selected) ?? config.nodes[0];
-  return [node, ctx.setSelected];
+  if (!ctx) throw new Error("useSelectedValidator must be used inside NodeProvider");
+  const validator = validators.find((v) => v.name === ctx.selected) ?? validators[0];
+  return [validator, ctx.setSelected];
 }
