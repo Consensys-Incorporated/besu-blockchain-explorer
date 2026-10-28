@@ -1,5 +1,5 @@
 {
-  "name": "besu-explorer",
+  "name": "besu-blockchain-explorer",
   "version": "0.0.1",
   "private": true,
   "scripts": {

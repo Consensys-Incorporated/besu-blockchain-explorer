@@ -1,4 +1,4 @@
-import { formatEther } from "ethers";
+import { formatEther, formatUnits } from "ethers";
 
 export function hexToNumber(hex?: string | null): number {
   return hex ? Number(BigInt(hex)) : 0;
@@ -34,4 +34,17 @@ export function formatTimestamp(timestampHex: string): string {
 export function clientIdentity(clientId: string): string | undefined {
   const parts = clientId.split("/");
   return parts.length >= 5 ? parts[1] : undefined;
+}
+
+// Total supply in whole tokens when decimals are known, otherwise as the raw count.
+export function formatTokenAmount(amount?: string, decimals?: number): string {
+  if (amount === undefined) return "—";
+  const value = decimals ? formatUnits(BigInt(amount), decimals) : amount;
+  return value.replace(/\.0$/, "");
+}
+
+// Share of the block gas limit used, as a percentage.
+export function gasUsedPercent(gasUsed: string, gasLimit: string): number {
+  const limit = hexToNumber(gasLimit);
+  return limit > 0 ? (hexToNumber(gasUsed) / limit) * 100 : 0;
 }

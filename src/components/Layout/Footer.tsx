@@ -1,7 +1,7 @@
 const links = [
-  { href: "https://besu.hyperledger.org/", label: "Besu docs" },
-  { href: "https://github.com/hyperledger/besu", label: "Besu on GitHub" },
-  { href: "https://github.com/joshuafernandes/besu-explorer", label: "besu-explorer" },
+  { href: "https://docs.besu-eth.org/", label: "Besu docs" },
+  { href: "https://github.com/besu-eth/besu", label: "Besu on GitHub" },
+  { href: "https://github.com/Consensys-Incorporated/besu-blockchain-explorer", label: "besu-blockchain-explorer" },
   { href: "https://discord.com/invite/hyperledger", label: "Discord" },
 ];
 

@@ -13,18 +13,32 @@ A lightweight explorer for private [Hyperledger Besu](https://docs.besu-eth.org/
 
   ![Validators page](validators.png)
 
-- **Explorer**: latest blocks and transactions, with lookup by block number or transaction hash
+- **Blocks**: latest blocks, with lookup by block number. Open a block to see its details and the transactions it contains
 
-  ![Explorer page](explorer.png)
+  ![Blocks page](blocks.png)
 
-- **Contracts**: compile Solidity in the browser, then deploy and call contracts through MetaMask
+- **Transactions**: recent transactions, with lookup by transaction hash
+
+  ![Transactions page](transactions.png)
+
+- **Contracts**: contracts deployed in recent blocks, with lookup by address. Open a contract to see its bytecode size, balance and token details
 
   ![Contracts page](contracts.png)
+
+- **Tokens**: ERC-20, ERC-721 and ERC-1155 tokens with transfers in recent blocks, with name, symbol and total supply
+
+  ![Tokens page](tokens.png)
+
+- **Playground**: compile Solidity in the browser, then deploy and call contracts through MetaMask
+
+  ![Playground page](playground.png)
 
 - **Wallets**: send ETH through MetaMask
 
   ![Wallets page](wallets.png)
 
+
+The explorer reads the node directly and keeps no index, so the Blocks, Transactions, Contracts and Tokens pages cover a recent window of up to 50 blocks. Use the search boxes to look up anything older.
 
 It has not been designed for production use yet.
 
@@ -42,7 +56,7 @@ The explorer reads from a single node. Enable these JSON-RPC API groups on it wi
 
 | API group | Used for |
 | --- | --- |
-| `ETH`, `NET` | blocks, transactions, chain ID, peer count |
+| `ETH`, `NET` | blocks, transactions, contracts, tokens, chain ID, peer count |
 | `ADMIN` | node info, peer list and validator names |
 | `TXPOOL` | pending transaction count (optional) |
 | `QBFT`, `IBFT` or `CLIQUE` | the validators page (match your consensus) |
@@ -158,7 +172,7 @@ BE_ALLOWED_EMAILS=contractor@example.com
 ```yaml
 services:
   explorer:
-    image: consensys/besu-explorer:latest
+    image: consensys/besu-blockchain-explorer:latest
     environment:
       BE_RPC_URL: http://rpcnode:8545
     volumes:
@@ -190,7 +204,7 @@ docker build . -t YOUR_IMAGE:TAG
 
 ### Deploying a contract fails with an invalid opcode
 
-Solidity 0.8.20 and later targets the Shanghai EVM by default and emits `PUSH0`. If your genesis doesn't enable Shanghai, pick an older target such as `london` or `paris` from the **EVM** selector on the Contracts page. The default is `london`.
+Solidity 0.8.20 and later targets the Shanghai EVM by default and emits `PUSH0`. If your genesis doesn't enable Shanghai, pick an older target such as `london` or `paris` from the **EVM** selector on the Playground page. The default is `london`.
 
 ### MetaMask transaction is stuck
 

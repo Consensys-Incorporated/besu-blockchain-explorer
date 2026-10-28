@@ -30,12 +30,15 @@ export default function App({ Component, pageProps }: Props) {
         </Head>
         <NodeProvider>
           <NavBar />
-          <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
-            <AuthGate disableAuth={disableAuth}>
-              <Component {...pageProps} />
-            </AuthGate>
-          </main>
-          <Footer />
+          {/* Leaves room for the fixed sidebar on large screens. */}
+          <div className="flex flex-1 flex-col lg:pl-60">
+            <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
+              <AuthGate disableAuth={disableAuth}>
+                <Component {...pageProps} />
+              </AuthGate>
+            </main>
+            <Footer />
+          </div>
         </NodeProvider>
         <Toaster richColors closeButton position="bottom-right" />
       </ThemeProvider>
