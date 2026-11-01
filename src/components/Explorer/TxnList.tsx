@@ -1,8 +1,37 @@
-import { FileCode2, Send } from "lucide-react";
+import { Coins, FileCode2, ImageIcon, Send } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { hexToEther, hexToNumber, shortenHex, timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Txn } from "@/types/Explorer";
+
+function TxnKindBadge({ txn }: { txn: Txn }) {
+  if (txn.to === null) {
+    return (
+      <StatusBadge tone="warning">
+        <FileCode2 /> Deploy
+      </StatusBadge>
+    );
+  }
+  if (txn.tokenType === "ERC-721" || txn.tokenType === "ERC-1155") {
+    return (
+      <StatusBadge tone="nft">
+        <ImageIcon /> NFT
+      </StatusBadge>
+    );
+  }
+  if (txn.tokenType === "ERC-20") {
+    return (
+      <StatusBadge tone="token">
+        <Coins /> Token
+      </StatusBadge>
+    );
+  }
+  return (
+    <StatusBadge tone="info">
+      <Send /> Txn
+    </StatusBadge>
+  );
+}
 
 export type TxnRow = { txn: Txn; timestamp?: string };
 
@@ -33,15 +62,7 @@ export function TxnList({
               inset ? "px-(--card-spacing)" : "px-3"
             )}
           >
-            {t.to === null ? (
-              <StatusBadge tone="warning">
-                <FileCode2 /> Deploy
-              </StatusBadge>
-            ) : (
-              <StatusBadge tone="info">
-                <Send /> Txn
-              </StatusBadge>
-            )}
+            <TxnKindBadge txn={t} />
             <div className="min-w-0">
               <p className="truncate font-mono text-[13px]">{t.hash}</p>
               <p className="truncate font-mono text-xs text-muted-foreground">

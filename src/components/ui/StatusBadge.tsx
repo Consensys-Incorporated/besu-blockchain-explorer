@@ -7,6 +7,8 @@ const tones = {
   danger: "bg-destructive/10 text-destructive dark:bg-destructive/20",
   warning: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   info: "bg-primary/10 text-primary",
+  nft: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+  token: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
 };
 
 // Badge with semantic colours, which the stock shadcn variants don't cover.

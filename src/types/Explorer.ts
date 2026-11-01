@@ -11,6 +11,9 @@ export type Txn = {
   transactionIndex: string;
   value: string;
   type?: string;
+  // Set by the explorer from the txn's Transfer events, not by the node.
+  // When a txn moves several kinds of token, an NFT standard wins.
+  tokenType?: TokenType;
 };
 
 export type Block = {

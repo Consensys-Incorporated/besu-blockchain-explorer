@@ -11,16 +11,32 @@ export function clampBlockCount(value: unknown): number {
   return Math.min(Math.max(Number(value) || 10, 1), MAX_BLOCKS);
 }
 
-// The latest `count` blocks (with full transactions), newest first.
+// The latest `count` blocks (with full transactions), newest first. Txns that
+// emitted token Transfer events get a `tokenType`.
 export async function recentBlocks(rpcUrl: string, count: number): Promise<Block[]> {
   const latest = parseInt(await ethApiCall<string>(rpcUrl, "eth_blockNumber"), 16);
   const numbers = Array.from({ length: Math.min(count, latest + 1) }, (_, i) => latest - i);
-  const blocks = await Promise.all(
-    numbers.map((n) =>
-      ethApiCall<Block | null>(rpcUrl, "eth_getBlockByNumber", ["0x" + n.toString(16), true])
-    )
-  );
-  return blocks.filter((b): b is Block => b !== null);
+  const [blocks, logs] = await Promise.all([
+    Promise.all(
+      numbers.map((n) =>
+        ethApiCall<Block | null>(rpcUrl, "eth_getBlockByNumber", ["0x" + n.toString(16), true])
+      )
+    ),
+    // The token tags are a nice-to-have, so a failed log query doesn't fail the blocks.
+    transferLogs(rpcUrl, numbers.at(-1) ?? 0, latest).catch(() => [] as Log[]),
+  ]);
+  const tokenTypes = new Map<string, TokenType>();
+  for (const log of logs) {
+    const type = transferTokenType(log);
+    const current = tokenTypes.get(log.transactionHash);
+    if (type && (!current || current === "ERC-20")) tokenTypes.set(log.transactionHash, type);
+  }
+  const found = blocks.filter((b): b is Block => b !== null);
+  for (const txn of found.flatMap((b) => b.transactions)) {
+    const tokenType = tokenTypes.get(txn.hash);
+    if (tokenType) txn.tokenType = tokenType;
+  }
+  return found;
 }
 
 export type Log = {
@@ -35,16 +51,21 @@ export const TRANSFER_TOPIC = id("Transfer(address,address,uint256)");
 export const TRANSFER_SINGLE_TOPIC = id("TransferSingle(address,address,address,uint256,uint256)");
 export const TRANSFER_BATCH_TOPIC = id("TransferBatch(address,address,address,uint256[],uint256[])");
 
-// Token transfer events from the latest `count` blocks, oldest first.
-export async function recentTransferLogs(rpcUrl: string, count: number): Promise<Log[]> {
-  const latest = parseInt(await ethApiCall<string>(rpcUrl, "eth_blockNumber"), 16);
+// Token transfer events from blocks `from` to `to` inclusive, oldest first.
+function transferLogs(rpcUrl: string, from: number, to: number): Promise<Log[]> {
   return ethApiCall<Log[]>(rpcUrl, "eth_getLogs", [
     {
-      fromBlock: "0x" + Math.max(latest - count + 1, 0).toString(16),
-      toBlock: "0x" + latest.toString(16),
+      fromBlock: "0x" + from.toString(16),
+      toBlock: "0x" + to.toString(16),
       topics: [[TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC]],
     },
   ]);
+}
+
+// Token transfer events from the latest `count` blocks, oldest first.
+export async function recentTransferLogs(rpcUrl: string, count: number): Promise<Log[]> {
+  const latest = parseInt(await ethApiCall<string>(rpcUrl, "eth_blockNumber"), 16);
+  return transferLogs(rpcUrl, Math.max(latest - count + 1, 0), latest);
 }
 
 // ERC-20 and ERC-721 share the Transfer signature; ERC-721 indexes the token ID,
