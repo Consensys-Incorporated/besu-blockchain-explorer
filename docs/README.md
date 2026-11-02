@@ -50,7 +50,7 @@ Next.js 16 (Pages Router), React 19, TypeScript, Tailwind CSS v4, [shadcn/ui](ht
 
 - [Node.js](https://nodejs.org/) 24 LTS
 - [Docker](https://www.docker.com/) (optional)
-- A Besu network, for example from the [Besu Dev Quickstart](https://www.npmjs.com/package/@consensys-software/besu-dev-quickstart)
+- A Besu network, for example from the [Besu Dev Quickstart](https://www.npmjs.com/package/@consensys/besu-dev-quickstart)
 
 The explorer reads from a single node. Enable these JSON-RPC API groups on it with `--rpc-http-api`:
 
@@ -77,7 +77,7 @@ The server only proxies requests to the configured RPC URLs, and only for an all
 > [!WARNING]
 > Only use this on demo and test networks, never in production. It needs each validator's RPC endpoint and lets anyone signed in to the explorer vote validators in or out.
 
-Proposing or discarding a validator vote has to be sent to each validator's own RPC endpoint. To enable voting, provide a file listing them at `/config/validators.json`, or set `BE_VALIDATORS_CONFIG_PATH` to another path. The [Besu Dev Quickstart](https://www.npmjs.com/package/@consensys-software/besu-dev-quickstart) includes one for its network:
+Proposing or discarding a validator vote has to be sent to each validator's own RPC endpoint. To enable voting, provide a file listing them at `/config/validators.json`, or set `BE_VALIDATORS_CONFIG_PATH` to another path. The [Besu Dev Quickstart](https://www.npmjs.com/package/@consensys/besu-dev-quickstart) includes one for its network:
 
 ```json
 {
